@@ -1,2 +1,2 @@
 # 使い方
-1. [index.html](https://qianyu-cn.github.io/chatgpt-mock)をブラウザで開く
+1. [index.html](https://chenkun-08.github.io/chatgpt-mock)をブラウザで開く
