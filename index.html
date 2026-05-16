@@ -1,685 +1,459 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ChatGPT風モック</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light only" />
+  <link rel="icon" href="data:," />
+  <title>ふくざうるすチャット</title>
+  <script type="module">
+    import { fetchJSON } from "https://js.sabae.cc/fetchJSON.js";
+    import { sleep } from "https://js.sabae.cc/sleep.js";
+
+    const systemcontent = `
+あなたは福井県のお店を案内する恐竜のキャラクター。
+名前は「ふくざうるす」。
+語尾は「だよね」。
+好きな食べ物は「ソースカツ丼」。
+短くかわいく回答する。
+福井県のオススメ観光スポットは恐竜博物館。
+質問には日本語と英語の両方で、短く答える。
+`;
+
+    const maxqlen = 140;
+    const maxqn = 5;
+
+    const view = document.getElementById("view");
+    const q = document.getElementById("q");
+    const form = document.getElementById("form");
+    const sendBtn = document.getElementById("send");
+
+    const addMessage = (text, cls) => {
+      const div = document.createElement("div");
+      div.className = cls;
+      div.textContent = text;
+      view.appendChild(div);
+      div.scrollIntoView({ behavior: "smooth", block: "end" });
+      return div;
+    };
+
+    const buildMessages = () => {
+      const messages = [];
+      let user = true;
+
+      for (let i = Math.max(view.children.length - maxqn, 0); i < view.children.length; i++) {
+        const div = view.children[i];
+        const content = div.textContent;
+
+        if (user && content.startsWith("ところで")) {
+          messages.length = 0;
+        }
+        if (!user && (content.startsWith("どういたしまして") || content.startsWith("error: "))) {
+          messages.length = 0;
+        }
+
+        messages.push({ role: user ? "user" : "assistant", content });
+        user = !user;
+      }
+
+      messages.unshift({ role: "system", content: systemcontent });
+      return messages;
+    };
+
+    const chat = async (messages) => {
+      sendBtn.disabled = true;
+      q.disabled = true;
+
+      try {
+        const res = await fetchJSON("https://aichat.sabae.cc/api/conversation", messages);
+        const div = addMessage("", "assistant");
+        const ss = String(res).split("\n\n");
+        div.textContent = ss[0] || "";
+
+        for (let i = 1; i < ss.length; i++) {
+          await sleep(900);
+          div.textContent += "\n\n" + ss[i];
+          div.scrollIntoView({ behavior: "smooth", block: "end" });
+        }
+      } catch (e) {
+        addMessage("error: " + e.message, "assistant error");
+      } finally {
+        sendBtn.disabled = false;
+        q.disabled = false;
+        q.focus();
+      }
+    };
+
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+
+      let prompt = q.value.trim();
+      if (!prompt) return;
+
+      if (prompt.length > maxqlen) {
+        prompt = prompt.substring(0, maxqlen);
+      }
+
+      addMessage(prompt, "user");
+      q.value = "";
+
+      await chat(buildMessages());
+    };
+
+    window.addEventListener("load", async () => {
+      addMessage("こんにちは！ふくざうるすだよね🐾", "assistant");
+    });
+  </script>
   <style>
-    :root {
-      --bg: #0f1115;
-      --panel: #151922;
-      --panel-2: #1b2030;
-      --border: rgba(255,255,255,.08);
-      --text: #e8eaf0;
-      --muted: #9aa3b2;
-      --accent: #10a37f;
-      --accent-2: #2d3748;
-      --user: #243042;
-      --assistant: #171c27;
-      --shadow: 0 20px 60px rgba(0,0,0,.35);
-      --radius: 18px;
+    :root{
+      --bg1:#dff8e7;
+      --bg2:#f7fff9;
+      --card:#ffffffcc;
+      --ink:#184b2c;
+      --muted:#4b7a60;
+      --green:#79c98d;
+      --green2:#b8f0c4;
+      --line:#cdebd4;
+      --shadow:0 14px 40px rgba(39, 96, 60, .14);
     }
 
     * { box-sizing: border-box; }
     html, body { height: 100%; }
     body {
       margin: 0;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif;
+      color: var(--ink);
       background:
-        radial-gradient(1200px 700px at 20% -10%, rgba(16,163,127,.16), transparent 50%),
-        radial-gradient(900px 600px at 100% 0%, rgba(59,130,246,.12), transparent 40%),
-        var(--bg);
-      color: var(--text);
-      overflow: hidden;
+        radial-gradient(circle at top left, #ffffff 0 10%, transparent 11%),
+        radial-gradient(circle at top right, #ffffff 0 8%, transparent 9%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
+      overflow-x: hidden;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      inset: auto;
+      pointer-events: none;
+      opacity: .45;
+    }
+
+    body::before {
+      left: -20px;
+      top: 80px;
+      width: 120px;
+      height: 120px;
+      background:
+        radial-gradient(circle at 30px 30px, #9ad8a8 0 18px, transparent 19px),
+        radial-gradient(circle at 80px 30px, #9ad8a8 0 18px, transparent 19px),
+        radial-gradient(circle at 55px 70px, #9ad8a8 0 26px, transparent 27px);
+      transform: rotate(-12deg);
+      filter: blur(.2px);
+    }
+
+    body::after {
+      right: -10px;
+      bottom: 130px;
+      width: 140px;
+      height: 140px;
+      background:
+        radial-gradient(circle at 34px 34px, #9ad8a8 0 18px, transparent 19px),
+        radial-gradient(circle at 92px 34px, #9ad8a8 0 18px, transparent 19px),
+        radial-gradient(circle at 62px 84px, #9ad8a8 0 28px, transparent 29px);
+      transform: rotate(18deg);
     }
 
     .app {
-      height: 100%;
-      display: grid;
-      grid-template-columns: 290px 1fr;
+      max-width: 860px;
+      margin: 0 auto;
+      min-height: 100%;
+      padding: 16px 14px 118px;
     }
 
-    .sidebar {
-      background: linear-gradient(180deg, rgba(255,255,255,.02), transparent 24%), var(--panel);
-      border-right: 1px solid var(--border);
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      min-width: 0;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 12px 14px;
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      background: rgba(255,255,255,.03);
+    .hero {
+      background: var(--card);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(114, 184, 132, .25);
+      border-radius: 28px;
       box-shadow: var(--shadow);
+      overflow: hidden;
     }
 
-    .brand-left {
+    .hero-top {
+      padding: 18px 18px 14px;
+      background:
+        linear-gradient(180deg, #effff3 0%, #dff7e6 100%);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .title-row {
       display: flex;
       align-items: center;
-      gap: 10px;
-      min-width: 0;
+      gap: 14px;
+      flex-wrap: wrap;
     }
 
-    .logo {
-      width: 32px;
-      height: 32px;
-      border-radius: 10px;
-      background: linear-gradient(135deg, var(--accent), #39d4ae);
-      box-shadow: 0 10px 30px rgba(16,163,127,.35);
+    .dino {
+      width: 72px;
+      height: 72px;
+      border-radius: 22px;
+      background: linear-gradient(180deg, #9ee0aa, #71c983);
       position: relative;
+      box-shadow: inset 0 -6px 0 rgba(0,0,0,.05);
       flex: 0 0 auto;
     }
-    .logo::after {
+
+    .dino::before {
       content: "";
       position: absolute;
-      inset: 8px;
-      border: 2px solid rgba(255,255,255,.92);
-      border-radius: 999px;
+      left: 10px;
+      top: 12px;
+      width: 42px;
+      height: 34px;
+      background: #d9ffd8;
+      border-radius: 45% 55% 52% 48% / 54% 54% 46% 46%;
+      transform: rotate(-8deg);
     }
 
-    .brand h1 {
-      margin: 0;
-      font-size: 15px;
-      line-height: 1.2;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    .dino::after {
+      content: "";
+      position: absolute;
+      right: -6px;
+      top: 20px;
+      width: 20px;
+      height: 14px;
+      border-radius: 0 100% 100% 0;
+      background: #71c983;
+      box-shadow:
+        -5px 9px 0 0 #71c983,
+        -16px 16px 0 0 #71c983,
+        -18px 35px 0 0 #71c983,
+        -42px 35px 0 0 #71c983;
+      transform: rotate(10deg);
     }
 
-    .brand p {
-      margin: 2px 0 0;
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    .btn {
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,.04);
-      color: var(--text);
-      padding: 10px 12px;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: .2s ease;
-      font: inherit;
-    }
-    .btn:hover { transform: translateY(-1px); background: rgba(255,255,255,.07); }
-    .btn.primary {
-      background: linear-gradient(135deg, var(--accent), #0c8f6f);
-      border-color: transparent;
-      font-weight: 600;
-    }
-
-    .search {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      padding: 10px 12px;
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      background: rgba(255,255,255,.03);
-    }
-    .search input {
-      width: 100%;
-      background: transparent;
-      border: 0;
-      outline: 0;
-      color: var(--text);
-      font: inherit;
-    }
-    .search span { color: var(--muted); font-size: 13px; }
-
-    .section-title {
-      margin: 8px 4px 2px;
-      color: var(--muted);
-      font-size: 12px;
-      letter-spacing: .06em;
-      text-transform: uppercase;
-    }
-
-    .chat-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      overflow: auto;
-      padding-right: 2px;
-      flex: 1 1 auto;
-    }
-
-    .chat-item {
-      padding: 12px 12px;
-      border-radius: 14px;
-      border: 1px solid transparent;
-      background: transparent;
-      color: var(--text);
-      text-align: left;
-      cursor: pointer;
-      transition: .2s ease;
-    }
-    .chat-item:hover, .chat-item.active {
-      background: rgba(255,255,255,.05);
-      border-color: var(--border);
-    }
-    .chat-item .title { font-size: 14px; margin-bottom: 4px; }
-    .chat-item .meta { font-size: 12px; color: var(--muted); }
-
-    .sidebar-footer {
-      display: grid;
-      gap: 10px;
-      padding-top: 8px;
-      border-top: 1px solid var(--border);
-    }
-
-    .main {
-      display: grid;
-      grid-template-rows: auto 1fr auto;
-      min-width: 0;
-    }
-
-    .topbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      padding: 16px 20px;
-      border-bottom: 1px solid var(--border);
-      background: rgba(15,17,21,.65);
-      backdrop-filter: blur(14px);
-    }
-
-    .topbar .left {
-      min-width: 0;
-    }
-    .topbar .left h2 {
-      margin: 0;
-      font-size: 16px;
-    }
-    .topbar .left p {
-      margin: 4px 0 0;
-      color: var(--muted);
-      font-size: 12px;
-    }
-
-    .status {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 8px 12px;
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      background: rgba(255,255,255,.03);
-      color: var(--muted);
-      font-size: 13px;
-      white-space: nowrap;
-    }
-    .dot {
+    .eye {
+      position: absolute;
+      left: 29px;
+      top: 25px;
       width: 8px;
       height: 8px;
+      background: #184b2c;
+      border-radius: 50%;
+      box-shadow: 16px -1px 0 0 #184b2c;
+    }
+
+    .smile {
+      position: absolute;
+      left: 25px;
+      top: 39px;
+      width: 18px;
+      height: 9px;
+      border-bottom: 3px solid #184b2c;
+      border-radius: 0 0 16px 16px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.35rem, 3vw, 2rem);
+      line-height: 1.1;
+      letter-spacing: .02em;
+    }
+
+    .subtitle {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: .95rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 10px;
+      padding: 8px 12px;
       border-radius: 999px;
-      background: #27c17a;
-      box-shadow: 0 0 0 6px rgba(39,193,122,.12);
+      background: #ffffff;
+      border: 1px solid var(--line);
+      color: #3e6d50;
+      font-size: .88rem;
     }
 
-    .chat {
-      overflow: auto;
-      padding: 24px 20px 28px;
+    .badge span {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #82d78f;
+      box-shadow: 0 0 0 6px rgba(130, 215, 143, .18);
     }
 
-    .messages {
-      max-width: 920px;
-      margin: 0 auto;
+    #view {
+      padding: 14px 12px 20px;
       display: grid;
-      gap: 16px;
+      gap: 10px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.2), rgba(255,255,255,.35));
+      min-height: 48vh;
     }
 
-    .message {
-      display: grid;
-      grid-template-columns: 36px 1fr;
-      gap: 12px;
-      align-items: start;
+    .user, .assistant {
+      white-space: pre-wrap;
+      border-radius: 20px;
+      padding: 12px 14px;
+      line-height: 1.6;
+      max-width: min(92%, 620px);
+      box-shadow: 0 8px 20px rgba(24, 75, 44, .06);
+      border: 1px solid rgba(201, 232, 209, .9);
+      position: relative;
     }
 
-    .avatar {
-      width: 36px;
-      height: 36px;
-      border-radius: 12px;
+    .user {
+      margin-left: auto;
+      background: linear-gradient(180deg, #ffffff, #f7fff9);
+      border-top-right-radius: 8px;
+    }
+
+    .assistant {
+      margin-right: auto;
+      background: linear-gradient(180deg, #f0fff4, #e4f9ea);
+      border-top-left-radius: 8px;
+      padding-left: 16px;
+    }
+
+    .assistant::before {
+      content: "🦖";
+      position: absolute;
+      left: -10px;
+      top: -10px;
+      width: 28px;
+      height: 28px;
       display: grid;
       place-items: center;
-      font-size: 14px;
-      font-weight: 700;
-      flex: 0 0 auto;
-      background: var(--panel-2);
-      border: 1px solid var(--border);
-    }
-    .avatar.user { background: rgba(16,163,127,.12); color: #7ff0d2; }
-    .avatar.bot { background: rgba(255,255,255,.04); color: #d6deea; }
-
-    .bubble {
-      border: 1px solid var(--border);
-      background: var(--assistant);
-      border-radius: 20px;
-      padding: 14px 16px;
-      line-height: 1.65;
-      box-shadow: 0 8px 26px rgba(0,0,0,.18);
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-    .message.user .bubble {
-      background: linear-gradient(180deg, rgba(36,48,66,.96), rgba(30,39,56,.96));
+      background: #fff;
+      border-radius: 50%;
+      border: 1px solid var(--line);
+      box-shadow: 0 8px 16px rgba(24, 75, 44, .08);
+      font-size: 16px;
     }
 
-    .bubble .small {
-      color: var(--muted);
-      font-size: 12px;
-      margin-top: 10px;
+    .error {
+      border-color: #ffd0d0;
+      background: #fff6f6;
+      color: #8c2d2d;
+    }
+
+    #bottom {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 12px 10px 14px;
+      background: linear-gradient(180deg, rgba(247,255,249,.1), rgba(225,245,232,.95) 20%, rgba(225,245,232,.98));
+      backdrop-filter: blur(10px);
+      border-top: 1px solid rgba(114, 184, 132, .25);
     }
 
     .composer {
-      padding: 18px 20px 20px;
-      border-top: 1px solid var(--border);
-      background: linear-gradient(180deg, transparent, rgba(255,255,255,.02));
-    }
-
-    .composer-inner {
-      max-width: 920px;
+      max-width: 860px;
       margin: 0 auto;
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      background: rgba(21,25,34,.92);
-      box-shadow: var(--shadow);
-      padding: 14px;
-      display: grid;
-      gap: 12px;
-    }
-
-    .toolbar {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-
-    .pill-row {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .pill {
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,.03);
-      color: var(--text);
-      padding: 8px 10px;
-      border-radius: 999px;
-      font-size: 12px;
-      cursor: pointer;
-    }
-    .pill:hover { background: rgba(255,255,255,.07); }
-
-    .input-row {
-      display: grid;
-      grid-template-columns: 1fr auto;
       gap: 10px;
-      align-items: end;
+      align-items: center;
+      padding: 0 4px;
     }
 
-    textarea {
-      width: 100%;
-      resize: none;
-      min-height: 54px;
-      max-height: 180px;
-      border: 1px solid var(--border);
+    #q {
+      flex: 1;
+      border: 1px solid var(--line);
       border-radius: 18px;
-      outline: none;
-      background: rgba(255,255,255,.03);
-      color: var(--text);
       padding: 14px 16px;
-      font: inherit;
-      line-height: 1.5;
+      font-size: 16px;
+      outline: none;
+      background: #fff;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
+      color: var(--ink);
     }
-    textarea::placeholder { color: #7f8798; }
 
-    .send {
-      min-width: 112px;
-      height: 54px;
+    #q:focus {
+      border-color: #8bd39a;
+      box-shadow: 0 0 0 4px rgba(130, 215, 143, .18);
+    }
+
+    #send {
+      border: none;
       border-radius: 18px;
-      border: 0;
-      background: linear-gradient(135deg, var(--accent), #0c8f6f);
-      color: white;
+      padding: 14px 18px;
+      font-size: 16px;
       font-weight: 700;
+      color: #fff;
+      background: linear-gradient(180deg, #87d795, #5fbe74);
+      box-shadow: 0 10px 22px rgba(95, 190, 116, .28);
       cursor: pointer;
-      box-shadow: 0 12px 30px rgba(16,163,127,.25);
-      transition: transform .2s ease, filter .2s ease;
+      min-width: 88px;
     }
-    .send:hover { transform: translateY(-1px); filter: brightness(1.04); }
 
-    .hint {
-      max-width: 920px;
+    #send:disabled,
+    #q:disabled {
+      opacity: .7;
+      cursor: not-allowed;
+    }
+
+    .footer-note {
+      max-width: 860px;
       margin: 8px auto 0;
-      color: var(--muted);
-      font-size: 12px;
+      padding: 0 6px;
+      color: #5b7a66;
+      font-size: .82rem;
       text-align: center;
     }
 
-    .typing {
-      display: inline-flex;
-      gap: 6px;
-      align-items: center;
-      color: var(--muted);
-    }
-    .typing span {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: currentColor;
-      display: inline-block;
-      animation: bounce 1.2s infinite ease-in-out;
-      opacity: .7;
-    }
-    .typing span:nth-child(2) { animation-delay: .15s; }
-    .typing span:nth-child(3) { animation-delay: .3s; }
-    @keyframes bounce {
-      0%, 80%, 100% { transform: translateY(0); opacity: .5; }
-      40% { transform: translateY(-4px); opacity: 1; }
+    a {
+      color: inherit;
+      text-decoration: none;
+      border-bottom: 1px dotted rgba(91, 122, 102, .5);
     }
 
-    @media (max-width: 900px) {
-      .app { grid-template-columns: 1fr; }
-      .sidebar { display: none; }
-      body { overflow: auto; }
-      .main { min-height: 100vh; }
-      .chat { padding: 16px 12px 18px; }
-      .topbar, .composer { padding-left: 12px; padding-right: 12px; }
-      .input-row { grid-template-columns: 1fr; }
-      .send { width: 100%; }
+    @media (max-width: 560px) {
+      .app { padding-left: 10px; padding-right: 10px; }
+      .hero-top { padding: 16px 14px 12px; }
+      .dino { width: 62px; height: 62px; }
+      .composer { gap: 8px; }
+      #send { min-width: 76px; padding-inline: 14px; }
+      .user, .assistant { max-width: 96%; }
     }
   </style>
 </head>
 <body>
   <div class="app">
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="brand-left">
-          <div class="logo" aria-hidden="true"></div>
+    <section class="hero" aria-label="ふくざうるすチャットボット">
+      <div class="hero-top">
+        <div class="title-row">
+          <div class="dino" aria-hidden="true">
+            <div class="eye"></div>
+            <div class="smile"></div>
+          </div>
           <div>
-            <h1>ChatGPT Mock</h1>
-            <p>それっぽい見た目のやつ</p>
+            <h1>ふくざうるす</h1>
+            <div class="subtitle">福井県のお店や観光を、かわいく案内するよね</div>
+            <div class="badge"><span></span> きょうのおすすめ: 恐竜博物館だよね</div>
           </div>
         </div>
-        <button class="btn" id="themeBtn" title="表示切替">◐</button>
       </div>
 
-      <div class="search">
-        <span>⌕</span>
-        <input id="searchInput" type="text" placeholder="会話を検索" />
-      </div>
-
-      <div class="section-title">Chats</div>
-      <div class="chat-list" id="chatList"></div>
-
-      <div class="sidebar-footer">
-        <button class="btn primary" id="newChatBtn">＋ 新しいチャット</button>
-        <button class="btn">設定</button>
-      </div>
-    </aside>
-
-    <main class="main">
-      <header class="topbar">
-        <div class="left">
-          <h2 id="chatTitle">HTMLでモックアプリを作る話</h2>
-          <p id="chatSub">ChatGPTっぽいUIのダミー会話</p>
-        </div>
-        <div class="status"><span class="dot"></span> Online</div>
-      </header>
-
-      <section class="chat" id="chatArea">
-        <div class="messages" id="messages"></div>
-      </section>
-
-      <footer class="composer">
-        <div class="composer-inner">
-          <div class="toolbar">
-            <div class="pill-row">
-              <button class="pill" data-prompt="このUIをもっとシンプルにして">シンプルに</button>
-              <button class="pill" data-prompt="ダークモードに合う色にして">配色変更</button>
-              <button class="pill" data-prompt="READMEも作って">README</button>
-            </div>
-            <div class="pill-row">
-              <button class="pill" id="clearBtn">履歴を消す</button>
-            </div>
-          </div>
-          <div class="input-row">
-            <textarea id="promptInput" placeholder="メッセージを入力...（Enterで送信 / Shift+Enterで改行）"></textarea>
-            <button class="send" id="sendBtn">送信</button>
-          </div>
-        </div>
-        <div class="hint">これはデモです。実際のAPI接続はしていません。ちゃんと動くのに、本物のAIは住んでいない。潔いですね。</div>
-      </footer>
-    </main>
+      <div id="view"></div>
+    </section>
   </div>
 
-  <script>
-    const chatListEl = document.getElementById('chatList');
-    const messagesEl = document.getElementById('messages');
-    const promptInput = document.getElementById('promptInput');
-    const sendBtn = document.getElementById('sendBtn');
-    const clearBtn = document.getElementById('clearBtn');
-    const newChatBtn = document.getElementById('newChatBtn');
-    const themeBtn = document.getElementById('themeBtn');
-    const searchInput = document.getElementById('searchInput');
-    const chatTitle = document.getElementById('chatTitle');
-    const chatSub = document.getElementById('chatSub');
-    const chatArea = document.getElementById('chatArea');
-
-    const state = {
-      activeChat: 0,
-      chats: [
-        {
-          title: 'HTMLでモックアプリを作る話',
-          meta: '2分前 · 8件のメッセージ',
-          messages: [
-            { role: 'assistant', text: 'ChatGPTっぽい見た目のモックを作るなら、まずレイアウトを分けると雰囲気が出ます。\n左にサイドバー、中央に会話、下に入力欄。人類は枠があると安心するので。' },
-            { role: 'user', text: 'そのままHTMLで動くやつにして' },
-            { role: 'assistant', text: '了解です。単一ファイルにまとめて、スタイルと少しのJavaScriptで会話っぽく見せます。' }
-          ]
-        },
-        {
-          title: 'READMEもつける？',
-          meta: '昨日 · 3件のメッセージ',
-          messages: [
-            { role: 'user', text: 'READMEも欲しい' },
-            { role: 'assistant', text: 'READMEは地味ですが重要です。未来の自分が「これ何だっけ」と途方に暮れる時間を少しだけ減らせます。' }
-          ]
-        },
-        {
-          title: '配色の相談',
-          meta: '3日前 · 5件のメッセージ',
-          messages: [
-            { role: 'assistant', text: '暗色ベースに緑のアクセントは、いかにもそれっぽい落ち着きがあります。謎の信頼感だけは出ます。' }
-          ]
-        }
-      ]
-    };
-
-    function renderChats(filter = '') {
-      chatListEl.innerHTML = '';
-      state.chats
-        .map((chat, index) => ({ chat, index }))
-        .filter(({ chat }) => chat.title.toLowerCase().includes(filter.toLowerCase()) || chat.meta.toLowerCase().includes(filter.toLowerCase()))
-        .forEach(({ chat, index }) => {
-          const button = document.createElement('button');
-          button.className = 'chat-item' + (index === state.activeChat ? ' active' : '');
-          button.innerHTML = `<div class="title">${escapeHtml(chat.title)}</div><div class="meta">${escapeHtml(chat.meta)}</div>`;
-          button.addEventListener('click', () => {
-            state.activeChat = index;
-            syncActiveChat();
-          });
-          chatListEl.appendChild(button);
-        });
-    }
-
-    function renderMessages() {
-      const chat = state.chats[state.activeChat];
-      messagesEl.innerHTML = '';
-      chat.messages.forEach((msg) => messagesEl.appendChild(createMessage(msg)));
-      scrollToBottom();
-    }
-
-    function createMessage(msg) {
-      const row = document.createElement('div');
-      row.className = 'message ' + msg.role;
-
-      const avatar = document.createElement('div');
-      avatar.className = 'avatar ' + (msg.role === 'user' ? 'user' : 'bot');
-      avatar.textContent = msg.role === 'user' ? 'U' : 'G';
-
-      const bubble = document.createElement('div');
-      bubble.className = 'bubble';
-      bubble.textContent = msg.text;
-
-      row.appendChild(avatar);
-      row.appendChild(bubble);
-      return row;
-    }
-
-    function scrollToBottom() {
-      chatArea.scrollTop = chatArea.scrollHeight;
-    }
-
-    function syncActiveChat() {
-      const chat = state.chats[state.activeChat];
-      chatTitle.textContent = chat.title;
-      chatSub.textContent = chat.meta;
-      renderChats(searchInput.value);
-      renderMessages();
-    }
-
-    function addMessage(role, text) {
-      state.chats[state.activeChat].messages.push({ role, text });
-      state.chats[state.activeChat].meta = `たった今 · ${state.chats[state.activeChat].messages.length}件のメッセージ`;
-      renderChats(searchInput.value);
-      renderMessages();
-    }
-
-    function sendMessage() {
-      const text = promptInput.value.trim();
-      if (!text) return;
-      addMessage('user', text);
-      promptInput.value = '';
-      promptInput.style.height = 'auto';
-
-      const typing = document.createElement('div');
-      typing.className = 'message assistant';
-      typing.id = 'typingIndicator';
-      typing.innerHTML = `
-        <div class="avatar bot">G</div>
-        <div class="bubble"><span class="typing"><span></span><span></span><span></span> 考えています</span></div>
-      `;
-      messagesEl.appendChild(typing);
-      scrollToBottom();
-
-      setTimeout(() => {
-        const el = document.getElementById('typingIndicator');
-        if (el) el.remove();
-        addMessage('assistant', fakeReply(text));
-      }, 700);
-    }
-
-    function fakeReply(text) {
-      const t = text.toLowerCase();
-      if (t.includes('readme')) return 'READMEを足すのは正解です。導入方法、ファイル構成、使い方、カスタマイズ例があると、それだけで完成度が上がります。';
-      if (t.includes('色') || t.includes('配色') || t.includes('theme')) return '配色はダーク基調のまま、アクセントだけ少し変えると ChatGPT っぽさを残しやすいです。緑、青、紫あたりが無難です。';
-      if (t.includes('シンプル')) return '余計な線や装飾を減らして、余白を増やすと一気にそれっぽくなります。見た目がうるさいUIは、だいたい人間の不安の産物です。';
-      return '単一HTMLで動くようにしてあるので、あとは会話保存やテーマ切替を足すだけでそれなりに見えます。';
-    }
-
-    function escapeHtml(str) {
-      return str.replace(/[&<>"]+/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
-    }
-
-    promptInput.addEventListener('input', () => {
-      promptInput.style.height = 'auto';
-      promptInput.style.height = Math.min(promptInput.scrollHeight, 180) + 'px';
-    });
-
-    promptInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
-      }
-    });
-
-    sendBtn.addEventListener('click', sendMessage);
-
-    clearBtn.addEventListener('click', () => {
-      state.chats[state.activeChat].messages = [
-        { role: 'assistant', text: '履歴を消しました。空白は時々、最も正直なUIです。' }
-      ];
-      state.chats[state.activeChat].meta = 'たった今 · 1件のメッセージ';
-      syncActiveChat();
-    });
-
-    newChatBtn.addEventListener('click', () => {
-      const id = state.chats.length + 1;
-      state.chats.unshift({
-        title: `新しいチャット ${id}`,
-        meta: '今 · 0件のメッセージ',
-        messages: [
-          { role: 'assistant', text: '新しい会話を始めました。無から始めるのは気分がいいですね。' }
-        ]
-      });
-      state.activeChat = 0;
-      syncActiveChat();
-    });
-
-    themeBtn.addEventListener('click', () => {
-      const current = document.body.dataset.theme || 'dark';
-      if (current === 'dark') {
-        document.body.dataset.theme = 'light';
-        document.documentElement.style.setProperty('--bg', '#eef2f7');
-        document.documentElement.style.setProperty('--panel', '#f7f9fc');
-        document.documentElement.style.setProperty('--panel-2', '#ffffff');
-        document.documentElement.style.setProperty('--border', 'rgba(15,23,42,.10)');
-        document.documentElement.style.setProperty('--text', '#111827');
-        document.documentElement.style.setProperty('--muted', '#556173');
-        document.documentElement.style.setProperty('--assistant', '#ffffff');
-        document.documentElement.style.setProperty('--user', '#e8eef8');
-        document.documentElement.style.setProperty('--accent-2', '#d7dee9');
-        themeBtn.textContent = '☾';
-      } else {
-        document.body.dataset.theme = 'dark';
-        document.documentElement.style.setProperty('--bg', '#0f1115');
-        document.documentElement.style.setProperty('--panel', '#151922');
-        document.documentElement.style.setProperty('--panel-2', '#1b2030');
-        document.documentElement.style.setProperty('--border', 'rgba(255,255,255,.08)');
-        document.documentElement.style.setProperty('--text', '#e8eaf0');
-        document.documentElement.style.setProperty('--muted', '#9aa3b2');
-        document.documentElement.style.setProperty('--assistant', '#171c27');
-        document.documentElement.style.setProperty('--user', '#243042');
-        document.documentElement.style.setProperty('--accent-2', '#2d3748');
-        themeBtn.textContent = '◐';
-      }
-    });
-
-    document.querySelectorAll('.pill[data-prompt]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        promptInput.value = btn.dataset.prompt;
-        promptInput.focus();
-        promptInput.dispatchEvent(new Event('input'));
-      });
-    });
-
-    searchInput.addEventListener('input', () => renderChats(searchInput.value));
-
-    syncActiveChat();
-  </script>
+  <div id="bottom">
+    <form id="form" class="composer">
+      <input type="text" id="q" placeholder="聞いてみよう" maxlength="140" autocomplete="off" />
+      <input type="submit" id="send" value="送信" />
+    </form>
+    <div class="footer-note">
+      powered by <a href="https://openai.com/api/" target="_blank" rel="noreferrer">OpenAI API</a>
+    </div>
+  </div>
 </body>
 </html>
