@@ -39,7 +39,7 @@ GitHub Pages にそのまま置いて動きます。
 ### 1. クローン
 
 ```bash
-git clone https://github.com/qianyu-08/fukuzaurus-chat.git
+git clone https://github.com/qian-08/fukuzaurus-chat.git
 ```
 
 ---
